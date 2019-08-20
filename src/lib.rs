@@ -5,7 +5,7 @@ extern crate lib_chip;
 use lib_chip::state::{State, delay_timer, sound_timer};
 use lib_chip::memory::Memory;
 use lib_chip::rom::Rom;
-use lib_chip::opcode::OpCode;
+use lib_chip::opcode::{OpCode, AddOp, JumpOp, LoadOp};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -100,22 +100,47 @@ impl Chip8 {
 
     pub fn get_opcode(&self) -> String {
         match self.state.last_opcode {
-            OpCode::Unknown(_) => String::from("Unknown"),
-            OpCode::XOR(_,_) => String::from("XOR"),
-            OpCode::ADD(_) => String::from("Add"),
-            OpCode::AND(_,_) => String::from("AND"),
-            OpCode::CALL(_) => String::from("CALL"),
+            OpCode::Unknown(op) => format!("Unknown({})", op),
+            OpCode::XOR(x,y) => format!("XOR({},{})", x, y),
+            OpCode::ADD(op) => {
+                match op {
+                    AddOp::ADD(vx, n) => format!("ADD {} to v[{}]", n, vx),
+                    AddOp::ADDI(vx) => format!("ADD v[{}] to I", vx),
+                    AddOp::ADDREG(vx, vy) => format!("ADD v[{}] to v[{}]", vy, vx)
+                }
+            },
+            OpCode::AND(x,y) => format!("AND({},{})", x, y),
+            OpCode::CALL(nnn) => format!("CALL({})", nnn),
             OpCode::CLS => String::from("Clear Screen"),
-            OpCode::DRW(_,_,_) => String::from("DRAW"),
-            OpCode::JP(_) => String::from("JUMP"),
-            OpCode::LD(_) => String::from("LOAD"),
-            OpCode::OR(_,_) => String::from("OR"),
+            OpCode::DRW(x,y,n) => format!("DRAW({},{},{})", x, y, n),
+            OpCode::JP(op) => {
+                match op {
+                    JumpOp::JP(nnn) => format!("JUMP({})", nnn),
+                    JumpOp::JPV0(nnn) => format!("JUMP(V0 + {})", nnn)
+                }
+            },
+            OpCode::LD(op) => {
+                match op {
+                    LoadOp::LD(vx, n) => format!("LD {}, {}", vx, n),
+                    LoadOp::LDB(vx) => format!("BCD v[{}]", vx),
+                    LoadOp::LDDTVX(vx) => format!("delay_timer = v[{}]", vx),
+                    LoadOp::LDF(vx) => format!("I = v[{}]", vx),
+                    LoadOp::LDI(nnn) => format!("I = {}", nnn),
+                    LoadOp::LDIV0X(vx) => format!("Store V0 to v[{}] to I++", vx),
+                    LoadOp::LDKEY(vx) => format!("LDKEY(v[{}]", vx),
+                    LoadOp::LDSTVX(vx) => format!("sound_timer = v[{}]", vx),
+                    LoadOp::LDV0XI(vx) => format!("Store I from V0 to V[{}]", vx),
+                    LoadOp::LDVXDT(vx) => format!("Set v[{}] = delay_timer", vx),
+                    LoadOp::LDXY(vx, vy) => format!("v[{}] = v[{}]", vy, vx) 
+                }
+            },
+            OpCode::OR(x,y) => format!("OR({},{})", x, y),
             OpCode::RET => String::from("RETURN"),
-            OpCode::RND(_,_) => String::from("RANDOM"),
+            OpCode::RND(vx, b) => format!("RANDOM(v[{}], {})", vx, b),
             OpCode::SHIFT(_) => String::from("SHIFT"),
             OpCode::SKIP(_) => String::from("SKIP"),
-            OpCode::SUB(_,_) => String::from("SUB"),
-            OpCode::SUBN(_,_) => String::from("SUBN")
+            OpCode::SUB(vx, vy) => format!("SUB(v[{}], v[{}])", vx, vy),
+            OpCode::SUBN(vx, vy) => format!("SUBN(v[{}], v[{}])", vx, vy)
         }
     }
 
